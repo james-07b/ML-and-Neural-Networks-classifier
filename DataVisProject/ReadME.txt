@@ -1,0 +1,1 @@
+To run this project - run the main python file (main.py) on PyCharm, then click on the http://127.0.0.1:5000/ link.

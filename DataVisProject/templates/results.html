@@ -1,0 +1,624 @@
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+<script src="https://code.highcharts.com/modules/wordcloud.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+<script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>
+
+var pos = {total:0, retweets:0, favorites:0, interactions:0, followers:0};
+var neu = {total:0, retweets:0, favorites:0, interactions:0, followers:0};
+var neg = {total:0, retweets:0, favorites:0, interactions:0, followers:0};
+var text = "";
+var title = '{{session['Name']}}';
+stopwords = [title,'us','re','If','It','m', "0","1","2","3","4","5","6","7","8","9","10","vs",",the",'.The',"The", ",The", "the", "THE",'.i','i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that','these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because','as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don','should','now', 'would', 'game', 'games', ',i', 'get', 'still',' i'];
+
+Highcharts.getOptions().exporting.buttons.contextButton.menuItems.splice(8, 3);
+
+
+Highcharts.seriesTypes.wordcloud.prototype.deriveFontSize = function (relativeWeight) {
+   var maxFontSize = 100;
+  return Math.floor(maxFontSize * relativeWeight);
+};
+
+function sentTest(){
+
+  var score = pos.total/neg.total
+
+  console.log(score)
+
+}
+
+function findOverallScore(sentiment, retweet, favorite, followers)
+{
+      if(sentiment === "positive")
+      {
+          pos.total++;
+          pos.retweets += retweet;
+          pos.favorites += favorite;
+          pos.followers += followers;
+      }
+      else if(sentiment === "neutral")
+      {
+          neu.total++;
+          neu.retweets += retweet;
+          neu.favorites += favorite;
+          neu.followers += followers;
+      }
+      else
+      {
+          neg.total++;
+          neg.retweets += retweet;
+          neg.favorites += favorite;
+          neg.followers += followers;
+      }
+
+    pos.interactions = pos.retweets + pos.favorites;
+    neu.interactions = neu.retweets + neu.favorites;
+    neg.interactions = neg.retweets + neg.favorites;
+
+    sentTest()
+
+};
+
+function getInfo(request, response)
+{
+$.ajax({
+        type: "GET",
+        url: "http://127.0.0.1:5000/results",
+        contentType:"application/json",
+        dataType: "json",
+        success: function (data) {
+           generateCharts(data)
+           getTweets(data)
+        }
+    });
+}
+
+function getTweets(data){
+
+   for(var i = 0; i < Object.keys(data).length; i++)
+    {
+      var obj = data[i];
+      var div = document.getElementById('WhereTheStuffGoes');
+      text += data[i].clean_tweet+",";
+    }
+
+
+    wordCloudingInit(text)
+
+}
+
+function remove_stopwords(str) {
+    res = []
+    new_words = str.split(' ')
+    for(i=0;i<new_words.length;i++) {
+       word_clean = new_words[i].split(".").join("")
+       console.log(word_clean)
+       if(!stopwords.includes(word_clean)) {
+           res.push(word_clean)
+       }
+    }
+    return(res.join(' '))
+}
+
+function wordCloudingInit(text){
+  text = remove_stopwords(text)
+  lines = text.split(/[,\. ]+/g),
+  words = lines.reduce((arr, word) => {
+    let obj = Highcharts.find(arr, obj => obj.name === word);
+    if (obj) {
+      obj.weight += 1;
+    } else {
+      obj = {
+        name: word,
+        weight: 1
+      };
+      arr.push(obj);
+    }
+    return arr;
+  }, []);
+
+  generateWordCloud(words)
+
+}
+
+function generateCharts(data){
+    for(var i = 0; i < Object.keys(data).length; i++)
+    {
+      var obj = data[i];
+      findOverallScore(obj.comp_score, obj.retweets, obj.favorites, obj.followers);
+    }
+
+    console.log(pos);
+    console.log(neu);
+    console.log(neg);
+
+    Highcharts.chart('chart1', {
+    chart: {
+    plotBackgroundColor: '#EEEEEE',
+    backgroundColor: '#EEEEEE',
+    plotBorderWidth: 0,
+    plotShadow: false,
+    margin: 60,
+    width: 500
+      },
+      title: {
+        text: 'Peoples Feelings Breakdown.',
+        align: 'center',
+        verticalAlign: 'top',
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'22px'
+        }
+
+       },
+      legend: {
+        enabled: false
+      },
+
+      xAxis: {
+        categories: ['Positive Tweets', 'Neutral Tweets', 'Negative Tweets'],
+         labels: {
+
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'12px'
+        }
+        },
+      },
+
+      yAxis: {
+        title: {
+                text: 'Total number of followers',
+                 style: {
+                          color: '#111111',
+                          fontWeight: 'bold',
+                          fontFamily:'Roboto Mono',
+                          fontSize:'12px'
+                          }
+                 },
+        tickInterval: 250000,
+        labels: {
+          formatter: function numberWithCommas()
+          {
+          return this.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          },
+          style: {
+                  color: '#111111',
+                  fontWeight: 'bold',
+                  fontFamily:'Roboto Mono',
+                  fontSize:'12px'
+                  }
+          },
+        },
+      tooltip: {
+        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+      },
+      accessibility: {
+        point: {
+          valueSuffix: '%'
+        }
+      },
+      plotOptions: {
+
+      bar: {
+        colors: ['#15eda3','#87e0ff', '#ff6464'],
+         size: '80%'
+       },
+
+       pie: {
+        colors: ['#15eda3','#87e0ff', '#ff6464'],
+        dataLabels: {
+            enabled: true,
+            distance: -40,
+            style: {
+                  color: '#111111',
+                  fontWeight: 'bold',
+                  fontFamily:'Roboto Mono',
+                  fontSize:'13px'
+                  },
+          },
+        }
+      },
+    series: [
+    {
+      type: 'pie',
+      name: 'Tweets',
+      colorByPoint: true,
+      data:
+      [
+        {name:"Positive", y:pos.total},
+        {name:"Neutral", y:neu.total},
+        {name:"Negative", y:neg.total}
+      ]
+    }
+  ]
+});
+
+Highcharts.chart('chart2', {
+    chart: {
+    plotBackgroundColor: '#EEEEEE',
+    backgroundColor: '#EEEEEE',
+    plotBorderWidth: 0,
+    plotShadow: false,
+    margin: 110,
+    width: 500
+      },
+      title: {
+        text: 'Total number of interactions',
+        align: 'center',
+        verticalAlign: 'top',
+        margin: 50,
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'22px'
+        }
+
+       },
+      legend: {
+        enabled: false
+      },
+
+      xAxis: {
+        categories: ['Positive Tweets', 'Neutral Tweets', 'Negative Tweets'],
+        labels: {
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'14px'
+
+        }
+        },
+
+      },
+
+      yAxis: {
+      tickInterval: 250,
+        title: {
+                text: ''
+              },
+        labels: {
+          formatter: function numberWithCommas()
+          {
+          return this.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          },
+          style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'16px'
+        }
+        },
+      },
+      tooltip: {
+          valueDecimals: 0,
+      },
+      accessibility: {
+        point: {
+          valueSuffix: '%'
+        }
+      },
+      plotOptions: {
+
+      bar: {
+        colors: ['#15eda3','#87e0ff', '#ff6464'],
+         size: '80%'
+       },
+      },
+    series: [
+    {
+      type: 'bar',
+      name: 'Tweets',
+      colorByPoint: true,
+      innerSize: '60%',
+      data:
+      [
+        {name:"Positive", y:pos.interactions},
+        {name:"Neutral", y:neu.interactions},
+        {name:"Negative", y:neg.interactions}
+      ]
+    }
+  ]
+});
+}
+
+function getBarchartNumbers(wordslist){
+  var numbers = [];
+  for (var i = 0; i < wordslist.length; i++)
+  {
+   numbers.push(wordslist[i].weight);
+  }
+
+  return numbers;
+}
+
+function getBarchartLabels(wordslist){
+  var labels = [];
+  for (var i = 0; i < wordslist.length; i++)
+  {
+   labels.push(wordslist[i].name);
+  }
+  console.log(labels);
+  return labels;
+}
+
+function generateWordCloud(words){
+
+    words.sort((a, b) => b.weight - a.weight);
+    words = words.slice(2, 55);
+    console.log(words);
+    Highcharts.chart('chart3', {
+    chart: {
+    plotBackgroundColor: '#EEEEEE',
+    backgroundColor: '#EEEEEE',
+    plotBorderWidth: 0,
+    plotShadow: false,
+    margin: 35,
+    width: 500,
+    height:470
+    },
+    title: {
+        text: 'Word cloud : '+title,
+        align: 'center',
+        verticalAlign: 'top',
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'22px'
+        }
+
+       },
+
+    series: [{
+      type: 'wordcloud',
+      data: words,
+      name: 'Occurrences',
+    }],
+  });
+  words = words.slice(0, 15);
+  numbers = getBarchartNumbers(words);
+  weight_labels = getBarchartLabels(words)
+  Highcharts.chart('chart4', {
+    chart: {
+    plotBackgroundColor: '#EEEEEE',
+    backgroundColor: '#EEEEEE',
+    plotBorderWidth: 0,
+    plotShadow: false,
+    margin: 90,
+    width: 500,
+    height:470
+      },
+      title: {
+        text: 'Word Distribution',
+        align: 'center',
+        verticalAlign: 'top',
+        margin: 50,
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'22px'
+        }
+
+       },
+      legend: {
+        enabled: false
+      },
+
+      xAxis: {
+        categories: weight_labels,
+        tickInterval: 1,
+        labels: {
+        step: 0,
+        allowOverlap: true,
+        style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'12px'
+
+        }
+        },
+
+      },
+
+      yAxis: {
+        title: {
+                text: ''
+              },
+        tickInterval: 10,
+        labels: {
+          formatter: function numberWithCommas()
+          {
+          return this.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          },
+          allowOverlap: true,
+          style: {
+            color: '#111111',
+            fontWeight: 'bold',
+            fontFamily:'Roboto Mono',
+            fontSize:'16px'
+        }
+        },
+      },
+      tooltip: {
+          valueDecimals: 0,
+      },
+      plotOptions: {
+
+      bar: {
+        colors: ['#15eda3','#87e0ff', '#ff6464', '#6867AC', '#FFC300'],
+        size: '100%',
+       },
+      },
+    series: [
+    {
+      type: 'bar',
+      name: 'Number of tweets',
+      colorByPoint: true,
+      pointWidth: 14,
+      data:numbers,
+      pointPadding: 0,
+      groupPadding: 0,
+      borderWidth: 0,
+    }
+  ]
+});
+}
+
+
+ function getRandomInt(max) {
+        return Math.floor(Math.random() * Math.floor(max));
+    }
+    function flashtext(ele) {
+         document.getElementById( ele ).style.color = grabColor();
+        }
+
+    setInterval(function() {
+         flashtext("colorChangerId");
+    }, 1200 );
+
+
+   function grabColor()
+   {
+        var color;
+        colors = ["#9C27B0","#29B6F6","#FFA726","#66BB6A","#EF5350","#FFEE58","#E0E0E0","#F48FB1"];
+        var choice = getRandomInt(9);
+        return colors[choice];
+   }
+
+$(document).ready(function()
+  {
+    getInfo();
+  });
+
+</script>
+<style>
+body{
+    background-color:#222831;
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    color:black
+}
+
+.container {
+  display: flex;
+}
+
+.navThing{
+  margin-left:25px;
+  margin-top:25px;
+}
+
+a{
+  color:#dedede;
+}
+
+.highcharts-figure{
+
+  padding:30px;
+  background-color:#EEEEEE;
+  border: 2px;
+  border-radius: 15px;
+
+}
+
+.highcharts-data-table table {
+    min-width: 320px;
+    max-width: 800px;
+    margin: 1em auto;
+}
+
+.highcharts-data-table table {
+    font-family: Verdana, sans-serif;
+    border-collapse: collapse;
+    border: 1px solid #ebebeb;
+    margin: 10px auto;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+.highcharts-data-table caption {
+    padding: 1em 0;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.highcharts-data-table th {
+    font-weight: 600;
+    padding: 0.5em;
+}
+
+.highcharts-data-table td,
+.highcharts-data-table th,
+.highcharts-data-table caption {
+    padding: 0.5em;
+}
+
+.highcharts-data-table thead tr,
+.highcharts-data-table tr:nth-child(even) {
+    background: #f8f8f8;
+}
+
+.highcharts-data-table tr:hover {
+    background: #f1f7ff;
+}
+
+.titleContainer{
+
+  padding:10px;
+  background-color:#EEEEEE;
+  border: 2px;
+  border-radius: 15px;
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  color:black;
+  width:38%;
+  margin-left:3%;
+  text-align: center;
+}
+
+
+</style>
+<div class = "navThing">
+  <h1 id = 'colorChangerId'>Results !</h1>
+  <h1><a href="http://127.0.0.1:5000/">Home</a></h1>
+</div>
+<div class = "titleContainer">
+  <h3>Your Search Term:<b> {{session['Name']}}</b></h3>
+</div>
+<div class = "container">
+  <figure class="highcharts-figure">
+    <div id="chart1"></div>
+  </figure>
+  <br>
+  <figure class="highcharts-figure">
+    <div id="chart2"></div>
+  </figure>
+</div>
+<div class = "container">
+  <figure class="highcharts-figure">
+      <div id="chart3"></div>
+  </figure>
+  <br>
+  <figure class="highcharts-figure">
+      <div id="chart4"></div>
+  </figure>
+</div>
+
+<div id = "WhereTheStuffGoes"></div>

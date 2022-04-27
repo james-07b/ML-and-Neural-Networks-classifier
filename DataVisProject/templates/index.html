@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>HomePage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+    <script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+</head>
+<script>
+ $(document).ready(function() {
+ });
+
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * Math.floor(max));
+    }
+    function flashtext(ele) {
+         document.getElementById( ele ).style.color = grabColor();
+        }
+
+    setInterval(function() {
+         flashtext("colorChangerId");
+    }, 1200 );
+
+
+   function grabColor()
+   {
+        var color;
+        colors = ["#9C27B0","#29B6F6","#FFA726","#66BB6A","#EF5350","#FFEE58","#E0E0E0","#F48FB1"];
+        var choice = getRandomInt(9);
+        return colors[choice];
+   }
+
+    function addDarkmodeWidget() {
+    new Darkmode().showWidget();
+  }
+  window.addEventListener('load', addDarkmodeWidget);
+
+</script>
+<style>
+body{
+    background-color:white;
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    color:black;
+}
+
+.container {
+     margin-left:35%;
+     margin-top:15%;
+}
+
+.container_item {
+     margin-top:15%;
+}
+
+.myInput {
+  vertical-align: bottom;
+  margin-bottom:35px;
+  margin-right:10px;
+  background-color: #F0F3F4;
+  border-radius: 10px;
+  border: 0;
+  box-sizing: border-box;
+  color:#424242;
+  height: 47px;
+  width: 250px;
+  outline: 0;
+  padding-left: 15px;
+  font-family: 'Roboto Mono';
+
+}
+
+button {
+  background-color: #00acee;
+  border-radius: 10px;
+  border: 0;
+  box-sizing: border-box;
+  color: #eee;
+  cursor: pointer;
+  height: 35px;
+  text-align: center;
+  font-size:18px;
+  font-family: 'Roboto Mono';
+  width: 200px;
+  padding-bottom:2px;
+}
+
+#handOfSearching{
+    vertical-align: bottom;
+    animation: rotation 4.5s infinite linear;
+
+}
+
+#handOfSearching { transition: all .5s ease-in-out; }
+#handOfSearching:hover { transform: scale(1.05); }
+
+#numberStyling{
+
+    background-color:black;
+    padding-top:8px;
+    padding-bottom:8px;
+    padding-left:14px;
+    padding-right:14px;
+}
+
+@keyframes rotation {
+  50% {
+    transform: rotate(40deg);
+  }
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+</style>
+<body>
+    <div class="container">
+        <h1  style="line-height: 1.8;" id = 'colorChangerId'>Twitter Opinion Thingy <span id="numberStyling"> 2.0</span></h1>
+        <div class="container_item">
+            <form method="POST" class="form" action="/">
+                <input class = "myInput" placeholder="Enter term here ..." name="query" autocomplete="off" type="text" value="timberwolves"/>
+                <input type="image" id ="handOfSearching"  src="http://127.0.0.1:5000/static/hand.png" width="200px"border="0" alt="Stupid Broken Thing" />
+            </form>
+        </div>
+    </div>
+</body>
+</html>
